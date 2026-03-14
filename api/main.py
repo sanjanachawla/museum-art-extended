@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.db import get_connection
+from app import db
 
 app = FastAPI()
 
@@ -71,3 +72,14 @@ def get_artists():
     conn.close()
 
     return results
+
+@app.get("/analytics")
+def get_analytics():
+
+    analytics = {
+        "department": db.get_department_distribution(),
+        "century": db.get_century_distribution(),
+        "timeline": db.get_timeline_distribution()
+    }
+
+    return analytics
