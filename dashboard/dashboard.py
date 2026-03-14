@@ -20,14 +20,23 @@ if selected_artist != "All":
     filtered_artworks = [artwork for artwork in filtered_artworks if artwork["artist"] == selected_artist]  
 if selected_century != "All":
     filtered_artworks = [artwork for artwork in filtered_artworks if artwork["century"] == selected_century]
+streamlit.markdown("---")
 
-for artwork in filtered_artworks:
-    streamlit.subheader(artwork["title"])
-    streamlit.write(f"Artist: {artwork['artist']}")
-    streamlit.write(f"Year: {artwork['year']}")
-    streamlit.write(f"Century: {artwork['century']}")
-    streamlit.write(f"Department: {artwork['department']}")
-    if artwork["image_url"]:
-        streamlit.image(artwork["image_url"], width=300)
-    
-    streamlit.markdown("---")
+cols = streamlit.columns(3)
+
+for i, artwork in enumerate(filtered_artworks):
+
+    col = cols[i % 3]
+
+    with col:
+
+        streamlit.image(artwork["image_url"])
+
+        streamlit.markdown(f"### {artwork['title']}")
+
+        streamlit.write(f"**Artist:** {artwork['artist']}")
+        streamlit.write(f"**Year:** {artwork['year']}")
+        streamlit.write(f"**Century:** {artwork['century']}")
+        streamlit.write(f"**Department:** {artwork['department']}")
+
+        streamlit.markdown("---")

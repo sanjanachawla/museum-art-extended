@@ -15,16 +15,24 @@ def get_object_ids():
 
 def main():
     object_ids = get_object_ids()
-
-    for object_id in object_ids[:100]:  # Limit to first 100 for testing
+    count = 0
+    for object_id in object_ids:  # Limit to first 100 for testing
 
         try:
             raw_artwork = met_client.get_artwork(object_id)
             normalized_artwork = data_normalizer.normalize_artwork_data(raw_artwork)
-            db.insert_artwork(normalized_artwork)
-            print(f"Inserted artwork ID {object_id} into database.")
+            inserted = db.insert_artwork(normalized_artwork)
+            if inserted:
+                print(f"Inserted artwork ID {object_id} into database.")
+                count +=1
+            #else:
+               # print(f"Failed to insert artwork ID {object_id} into database.")
         except Exception as e:
             print(f"Error processing artwork ID {object_id}: {e}")
+
+        if count >= 100:
+            break
+
 
     print("\nFinished processing artworks.\n")
 
