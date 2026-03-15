@@ -2,10 +2,11 @@ import streamlit
 import requests
 import pandas
 import plotly.express as px
+import os
 
 streamlit.set_page_config(page_title="MET Museum Art Explorer", layout="wide")  
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # streamlit.title("MET Museum Art Explorer")
 # streamlit.markdown("Explore the MET Museum's art collection with interactive charts and a gallery view. Use the filters to discover artworks by different artists and centuries.")
@@ -32,8 +33,13 @@ streamlit.markdown(
 
 streamlit.divider()
 
-response = requests.get(f"{API_URL}/artworks")
-artworks = response.json()
+try:
+    response = requests.get(f"{API_URL}/artworks", timeout=30)
+    response.raise_for_status()
+    artworks = response.json()
+except requests.RequestException as error:
+    streamlit.error(f"Failed to load artworks from API at {API_URL}: {error}")
+    streamlit.stop()
 
 # turn to dataframe
 artworks_df = pandas.DataFrame(artworks)

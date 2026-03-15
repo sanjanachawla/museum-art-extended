@@ -26,6 +26,9 @@ services:
       DB_PASSWORD: rootpassword
       DB_NAME: met_art
       DB_PORT: 3306
+      INITIAL_ARTWORK_SEED_COUNT: 100
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
     ports:
       - "8000:8000"
 

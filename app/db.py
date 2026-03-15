@@ -1,5 +1,15 @@
 import mysql.connector
 import os
+import time
+
+
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "rootpassword"),
+    "database": os.getenv("DB_NAME", "met_art"),
+    "port": int(os.getenv("DB_PORT", 3306)),
+}
 
 
 # def get_connection():
@@ -13,13 +23,92 @@ import os
 
 def get_connection():
 
+    return mysql.connector.connect(**DB_CONFIG)
+
+
+def get_server_connection():
+
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", "rootpassword"), 
-        database=os.getenv("DB_NAME", "met_art"),
-        port=int(os.getenv("DB_PORT", 3306))
+        host=DB_CONFIG["host"],
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        port=DB_CONFIG["port"],
     )
+
+
+def wait_for_database(max_attempts=30, delay_seconds=2):
+
+    last_error = None
+
+    for _ in range(max_attempts):
+        try:
+            conn = get_server_connection()
+            conn.close()
+            return
+        except mysql.connector.Error as error:
+            last_error = error
+            time.sleep(delay_seconds)
+
+    raise last_error
+
+
+def initialize_database():
+
+    server_conn = get_server_connection()
+    server_cursor = server_conn.cursor()
+
+    server_cursor.execute(
+        f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}"
+    )
+
+    server_cursor.close()
+    server_conn.close()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS artists (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS artworks (
+            id INT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            artist_id INT NOT NULL,
+            year INT NULL,
+            century INT NULL,
+            department VARCHAR(255) NULL,
+            image_url TEXT NULL,
+            CONSTRAINT fk_artworks_artist
+                FOREIGN KEY (artist_id) REFERENCES artists(id)
+        )
+        """
+    )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def count_artworks():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM artworks")
+    count = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    return count
 
 def get_or_create_artist(name):
 
@@ -36,6 +125,7 @@ def get_or_create_artist(name):
 
     if result:
 
+        cursor.close()
         conn.close()
 
         return result[0]
@@ -49,6 +139,7 @@ def get_or_create_artist(name):
 
     artist_id = cursor.lastrowid
 
+    cursor.close()
     conn.close()
 
     return artist_id
@@ -84,9 +175,11 @@ def insert_artwork(record):
     )
 
     conn.commit()
+    inserted = cursor.rowcount > 0
 
+    cursor.close()
     conn.close()
-    return True
+    return inserted
 
 
 def get_department_distribution():
