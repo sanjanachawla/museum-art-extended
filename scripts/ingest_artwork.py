@@ -1,20 +1,13 @@
 import random
-import requests
 
 from app import met_client
 from app import data_normalizer
 from app import db
 
 
-MET_OBJECTS_URL = "https://collectionapi.metmuseum.org/public/collection/v1/objects"
-
-
 def get_object_ids():
     """Fetch all available MET object IDs."""
-    response = requests.get(MET_OBJECTS_URL, timeout=10)
-    response.raise_for_status()
-    data = response.json()
-    return data["objectIDs"]
+    return met_client.get_object_ids()
 
 
 def is_valid_artwork(record):

@@ -12,6 +12,16 @@ DB_CONFIG = {
 }
 
 
+def env_flag(name, default=False):
+
+    value = os.getenv(name)
+
+    if value is None:
+        return default
+
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 # def get_connection():
 
 #     return mysql.connector.connect(
@@ -36,7 +46,7 @@ def get_server_connection():
     )
 
 
-def wait_for_database(max_attempts=30, delay_seconds=2):
+def wait_for_database(max_attempts=120, delay_seconds=2):
 
     last_error = None
 
@@ -52,17 +62,18 @@ def wait_for_database(max_attempts=30, delay_seconds=2):
     raise last_error
 
 
-def initialize_database():
+def initialize_database(create_database_if_missing=False):
 
-    server_conn = get_server_connection()
-    server_cursor = server_conn.cursor()
+    if create_database_if_missing:
+        server_conn = get_server_connection()
+        server_cursor = server_conn.cursor()
 
-    server_cursor.execute(
-        f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}"
-    )
+        server_cursor.execute(
+            f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}"
+        )
 
-    server_cursor.close()
-    server_conn.close()
+        server_cursor.close()
+        server_conn.close()
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -210,6 +221,28 @@ def get_century_distribution():
     GROUP BY century
     ORDER BY count DESC
     """)
+
+    results = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return results
+
+
+def get_timeline_distribution():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT year, COUNT(*) AS count
+        FROM artworks
+        WHERE year IS NOT NULL
+        GROUP BY year
+        ORDER BY year
+        """
+    )
 
     results = cursor.fetchall()
 

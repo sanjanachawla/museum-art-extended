@@ -5,6 +5,12 @@ from app import db
 app = FastAPI()
 
 
+@app.get("/health")
+def health_check():
+
+    return {"status": "ok"}
+
+
 @app.get("/artworks")
 def get_artworks():
 

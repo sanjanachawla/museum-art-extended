@@ -1,0 +1,45 @@
+{
+  "family": "museum-art-bootstrap",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<account-id>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<account-id>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "bootstrap",
+      "image": "<account-id>.dkr.ecr.<region>.amazonaws.com/museum-art-api:latest",
+      "essential": true,
+      "command": ["python", "-m", "scripts.bootstrap_db"],
+      "environment": [
+        { "name": "DB_HOST", "value": "<rds-endpoint>" },
+        { "name": "DB_USER", "value": "<db-user>" },
+        { "name": "DB_NAME", "value": "met_art" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "CREATE_DB_IF_MISSING", "value": "false" },
+        { "name": "RUN_SEED", "value": "true" },
+        { "name": "INITIAL_ARTWORK_SEED_COUNT", "value": "20" },
+        { "name": "INITIAL_ARTWORK_MINIMUM_COUNT", "value": "20" },
+        { "name": "INITIAL_ARTWORK_MAX_ATTEMPTS", "value": "80" },
+        { "name": "INITIAL_ARTWORK_RETRIES_PER_ARTWORK", "value": "2" },
+        { "name": "INITIAL_ARTWORK_RETRY_BACKOFF_SECONDS", "value": "1.5" },
+        { "name": "FAIL_ON_SEED_SHORTFALL", "value": "true" }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:<db-password-secret>"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/museum-art-bootstrap",
+          "awslogs-region": "<region>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

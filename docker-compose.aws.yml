@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT:-3306}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      RUN_DB_INIT_ON_STARTUP: "true"
+      CREATE_DB_IF_MISSING: "false"
+    ports:
+      - "8000:8000"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      API_URL: ${API_URL:-http://api:8000}
+    depends_on:
+      - api
+    ports:
+      - "8501:8501"
+
+  bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT:-3306}
+      CREATE_DB_IF_MISSING: "false"
+      RUN_SEED: ${RUN_SEED:-true}
+      INITIAL_ARTWORK_SEED_COUNT: ${INITIAL_ARTWORK_SEED_COUNT:-100}
+      INITIAL_ARTWORK_MINIMUM_COUNT: ${INITIAL_ARTWORK_MINIMUM_COUNT:-100}
+      INITIAL_ARTWORK_MAX_ATTEMPTS: ${INITIAL_ARTWORK_MAX_ATTEMPTS:-300}
+      INITIAL_ARTWORK_RETRIES_PER_ARTWORK: ${INITIAL_ARTWORK_RETRIES_PER_ARTWORK:-2}
+      INITIAL_ARTWORK_RETRY_BACKOFF_SECONDS: ${INITIAL_ARTWORK_RETRY_BACKOFF_SECONDS:-1.5}
+      FAIL_ON_SEED_SHORTFALL: ${FAIL_ON_SEED_SHORTFALL:-true}
+    command: ["python", "-m", "scripts.bootstrap_db"]
+    restart: "no"
