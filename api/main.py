@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from app.db import get_connection
 from app import db
+from fastapi.responses import JSONResponse
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger("api")
 
 app = FastAPI()
 
@@ -14,28 +20,33 @@ def health_check():
 @app.get("/artworks")
 def get_artworks():
 
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("""
-        SELECT artworks.id,
-               artworks.title,
-               artists.name AS artist,
-               artworks.year,
-               artworks.century,
-               artworks.department,
-               artworks.image_url
-        FROM artworks
-        JOIN artists
-        ON artworks.artist_id = artists.id
-        LIMIT 50
-    """)
+        cursor.execute("""
+            SELECT artworks.id,
+                   artworks.title,
+                   artists.name AS artist,
+                   artworks.year,
+                   artworks.century,
+                   artworks.department,
+                   artworks.image_url
+            FROM artworks
+            JOIN artists
+            ON artworks.artist_id = artists.id
+            LIMIT 50
+        """)
 
-    results = cursor.fetchall()
+        results = cursor.fetchall()
 
-    conn.close()
+        conn.close()
 
-    return results
+        return results
+    except Exception as e:
+        logger.error(f"Error in /artworks endpoint: {e}")
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error", "details": str(e)})
+
 
 
 @app.get("/artworks/{artwork_id}")

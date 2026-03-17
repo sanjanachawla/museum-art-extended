@@ -9,6 +9,10 @@
 
 > Explore the Metropolitan Museum of Art's vast collection through an interactive web dashboard. This project provides a streamlined way to browse, filter, and visualize artworks from the MET's public API, with data stored in a MySQL database and served via a FastAPI backend.
 
+The Website:
+![met-art-gallery](https://met-art-gallery.com/)
+
+The Met Museum API
 ![MET Museum](https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=artwork) 
 ![website](image.png)
 

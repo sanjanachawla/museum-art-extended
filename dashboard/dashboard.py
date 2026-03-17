@@ -6,11 +6,7 @@ import os
 
 streamlit.set_page_config(page_title="MET Museum Art Explorer", layout="wide")  
 
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
-
-# streamlit.title("MET Museum Art Explorer")
-# streamlit.markdown("Explore the MET Museum's art collection with interactive charts and a gallery view. Use the filters to discover artworks by different artists and centuries.")
-# streamlit.markdown("---")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8001")
 
 streamlit.markdown(
     """
@@ -24,7 +20,7 @@ streamlit.markdown(
 streamlit.markdown(
     """
     <h1 style='text-align: center; font-size: 2em; color: gray; font-family: "Georgia", serif;'>
-    explore the MET Museum's art collection with interactive charts and a gallery view. 
+    explore a subset of the MET Museum's art collection with interactive charts and a gallery view. 
     Use the filters to discover artworks by different artists and centuries.
     </h1>
     """,
@@ -59,56 +55,98 @@ centuries = sorted(list(set(artwork["century"] for artwork in artworks if artwor
 
 # layout : charts| gallery
 
+# streamlit.subheader("Filtering Options")
+streamlit.markdown(
+    """
+    <h1 style='text-align: left; font-size: 1.5em; color: red; font-family: "Georgia", serif;'>
+    Filters
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
+selected_artist = streamlit.selectbox("Select Artist", ["All"] + artists)
+selected_century = streamlit.selectbox("Select Century", ["All"] + centuries)
+
+filtered_artworks = artworks
+if selected_artist != "All":
+    filtered_artworks = [artwork for artwork in filtered_artworks if artwork["artist"] == selected_artist]  
+if selected_century != "All":
+    filtered_artworks = [artwork for artwork in filtered_artworks if artwork["century"] == selected_century]
+
+if len(filtered_artworks) == 0:
+    streamlit.warning("No artworks match the selected filters. Please adjust your selections.")
+streamlit.divider()
 charts_col, gallery_col = streamlit.columns([1, 2])
 
 with charts_col:
-    streamlit.subheader("Collection Analytics")
-    # artworks by department
-    dept_counts = artworks_df["department"].value_counts().reset_index(name="count").rename(columns={"index": "department"})
-
-    pie = px.pie(
-        dept_counts,
-        names="department",
-        values="count",
-        title="Artworks by Department"
+    artworks_df = pandas.DataFrame(filtered_artworks)
+    streamlit.markdown(
+    """
+    <h1 style='text-align: center; font-size: 1.5em; color: red; font-family: "Georgia", serif;'>
+    Collection Analytics
+    </h1>
+    """,
+    unsafe_allow_html=True
     )
-    streamlit.plotly_chart(pie, width='stretch')
+    #streamlit.subheader("Collection Analytics")
+    # if artworks_df.empty:
+    #     streamlit.write("No artworks available to display charts.")
+    
+    if not artworks_df.empty:
+        # artworks by department
+        dept_counts = artworks_df["department"].value_counts().reset_index(name="count").rename(columns={"index": "department"})
 
-
-    # century distribution
-    centuries_df = artworks_df.dropna(subset=["century"])["century"].value_counts().reset_index(name="count").rename(columns={"index": "century"})
-
-    bar = px.bar(
-        centuries_df,
-        x="century",
-        y="count",
-        title="Artworks by Century"
-    )
-    streamlit.plotly_chart(bar, width='stretch')
-
-    # timeline
-    timeline_df = artworks_df.dropna(subset=["year"])
-    if not timeline_df.empty:
-        timeline = px.scatter(
-            timeline_df,
-            x="year",
-            y="department",
-            hover_data=["title", "artist"],
-            title="Artworks Timeline"
+        pie = px.pie(
+            dept_counts,
+            names="department",
+            values="count",
+            title="Artworks by Department"
         )
-        streamlit.plotly_chart(timeline, width='stretch')
+        streamlit.plotly_chart(pie, width='stretch')
+
+
+        # century distribution
+        centuries_df = artworks_df.dropna(subset=["century"])["century"].value_counts().reset_index(name="count").rename(columns={"index": "century"})
+
+        bar = px.bar(
+            centuries_df,
+            x="century",
+            y="count",
+            title="Artworks by Century"
+        )
+        streamlit.plotly_chart(bar, width='stretch')
+
+        # timeline
+        timeline_df = artworks_df.dropna(subset=["year"])
+        if not timeline_df.empty:
+            timeline = px.scatter(
+                timeline_df,
+                x="year",
+                y="department",
+                hover_data=["title", "artist"],
+                title="Artworks Timeline"
+            )
+            streamlit.plotly_chart(timeline, width='stretch')
 
 # right side : gallery
 with gallery_col:
-    streamlit.subheader("Artwork Gallery")
-    selected_artist = streamlit.selectbox("Select Artist", ["All"] + artists)
-    selected_century = streamlit.selectbox("Select Century", ["All"] + centuries)
+    #streamlit.subheader("Artwork Gallery")
+    streamlit.markdown(
+    """
+    <h1 style='text-align: center; font-size: 1.5em; color: red; font-family: "Georgia", serif;'>
+    Gallery
+    </h1>
+    """,
+    unsafe_allow_html=True
+    )
+    # selected_artist = streamlit.selectbox("Select Artist", ["All"] + artists)
+    # selected_century = streamlit.selectbox("Select Century", ["All"] + centuries)
 
-    filtered_artworks = artworks
-    if selected_artist != "All":
-        filtered_artworks = [artwork for artwork in filtered_artworks if artwork["artist"] == selected_artist]  
-    if selected_century != "All":
-        filtered_artworks = [artwork for artwork in filtered_artworks if artwork["century"] == selected_century]
+    # filtered_artworks = artworks
+    # if selected_artist != "All":
+    #     filtered_artworks = [artwork for artwork in filtered_artworks if artwork["artist"] == selected_artist]  
+    # if selected_century != "All":
+    #     filtered_artworks = [artwork for artwork in filtered_artworks if artwork["century"] == selected_century]
 
     cols = streamlit.columns(3)
 
